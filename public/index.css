@@ -1,0 +1,58 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+#header {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+#backward-btn {
+  height: 40px;
+  cursor: pointer;
+}
+
+#prompt-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 600px;
+  margin: auto;
+  background-color: deepskyblue;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+#current-folder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow: auto;
+  background-color: bisque;
+}
+
+#current-folder>* {
+  font-size: 1.2rem;
+  width: 100%;
+  cursor: pointer;
+  transition: scale 0.2s ease-in;
+  padding: 0.2rem;
+}
+
+.items:hover {
+  outline: 2px solid black;
+  scale: 0.95;
+}
+
+#dir-name-input {
+  font-size: 1.2rem;
+  padding: 0.35rem;
+}

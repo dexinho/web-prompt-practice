@@ -11,13 +11,25 @@
 
 <body>
   <div id="prompt-container">
-    <div id="header">
+    <div id="user-options-div">
       <button id="backward-btn">BACK</button>
       <input id="dir-name-input">
+      <button id="create-btn">CREATE</button>
     </div>
-    <div id="current-folder"></div>
+    <div id="current-dir"></div>
   </div>
-  <div id="options-div"><button></button><button></button></div>
+  <dialog id="delete-confirmation-dialog">
+    <div>ARE YOU SURE?</div>
+    <div><button class='delete-confirmation-btns'>YES</button><button class='delete-confirmation-btns'>NO</button></div>
+  </dialog>
+  <dialog id="creation-dialog">
+    <div id="creation-div">
+      <div id='dir-file-name-div'>Directory or File name:</div>
+      <input type="text" id="item-name-input">
+      <button class="creation-btns">CONFIRM</button>
+      <button class="creation-btns">CANCEL</button>
+    </div>
+  </dialog>
 </body>
 
 </html>

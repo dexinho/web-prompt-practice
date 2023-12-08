@@ -22,13 +22,11 @@ const server = http.createServer(async (req, res) => {
     } else if (req.method === "GET" && req.url === "/navBackward") {
       if (currentPath === "C:\\") return;
 
-      console.log(isReadingFile)
-
       if (!isReadingFile) {
         currentPath = currentPath.replace(/(\\[^\\]+)$/, "");
         currentPath = currentPath.replace(/(\/[^\/]+)$/, "");
       }
-      
+
       isReadingFile = false;
       if (currentPath === "C:") currentPath = "C:\\";
 
@@ -57,7 +55,6 @@ const server = http.createServer(async (req, res) => {
       }
     } else if (req.method === "GET" && req.url.startsWith("/removeItem")) {
       const itemToRemove = req.url.split("=")[1];
-      console.log("item to remove", itemToRemove);
       await fsp.unlink(path.join(currentPath, itemToRemove));
       const filesAndDirs = await getFilesAndDirs(currentPath);
       const renderedHTML = renderDirHTML(filesAndDirs);
@@ -72,7 +69,7 @@ const server = http.createServer(async (req, res) => {
       stream.pipe(res);
     } else if (req.method === "GET" && req.url.startsWith("/createItem")) {
       const itemName = req.url.split("=")[1];
-      fsp.writeFile(path.join(currentPath, itemName), "");
+      await fsp.writeFile(path.join(currentPath, itemName), "");
 
       const filesAndDirs = await getFilesAndDirs(currentPath);
       const renderedHTML = renderDirHTML(filesAndDirs);
@@ -97,8 +94,6 @@ const server = http.createServer(async (req, res) => {
       const urlPath =
         req.url === "/" ? "./public/index.html" : `./public/${req.url}`;
       const extname = String(path.extname(urlPath)).toLowerCase();
-
-      console.log(extname);
 
       const contentType =
         {
@@ -139,7 +134,7 @@ async function getFilesAndDirs(path) {
 
 function renderDirHTML(list) {
   return `
-  <div id='current-dir'>${list
+  ${list
     .map(
       (item) => `
       <div class='item-slot'>
@@ -150,8 +145,6 @@ function renderDirHTML(list) {
   <button class='delete-item-btn'>X</button></div>`
     )
     .join("")}
-  
-  </div>
   `;
 }
 

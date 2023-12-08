@@ -19,8 +19,8 @@ let isDeletable = false;
 dirPathInput.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
     try {
-      const data = await fetch(`/enterPath=${dirPathInput.value}`);
-      const renderedHTML = await data.text();
+      const response = await fetch(`/enterPath=${dirPathInput.value}`);
+      const renderedHTML = await response.text();
 
       currentDirDiv.innerHTML = renderedHTML;
 
@@ -43,8 +43,8 @@ const navigateThroughDirs = async ({ dirName, isForward }) => {
   try {
     const url = isForward ? `/navForward=${dirName}` : "/navBackward";
 
-    const data = await fetch(url);
-    const renderedHTML = await data.text();
+    const response = await fetch(url);
+    const renderedHTML = await response.text();
     const getPath = await fetch("/getPath");
     const jsonPath = await getPath.text();
 
@@ -88,8 +88,8 @@ const makeItemsClickable = (items) => {
 };
 
 const openFile = async (fileName) => {
-  const data = await fetch(`/readFile=${fileName}`);
-  const renderedHTML = await data.text();
+  const response = await fetch(`/readFile=${fileName}`);
+  const renderedHTML = await response.text();
 
   currentDirDiv.innerHTML = renderedHTML;
   handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
@@ -118,6 +118,12 @@ const makeRmItemClickable = (items) => {
             once: true,
           });
         });
+      } else {
+        alertDiv.style.display = "block";
+        alertDiv.textContent = "No permission to remove!";
+        setTimeout(() => {
+          alertDiv.style.display = "none";
+        }, 1000);
       }
     });
   });
@@ -142,18 +148,21 @@ createBtn.addEventListener("click", () => {
 
 const createItem = async (itemName) => {
   try {
-    const data = await fetch(`/createItem=${itemName}`);
-    const renderedHTML = await data.text();
+    const response = await fetch(`/createItem=${itemName}`);
 
-    currentDirDiv.innerHTML = renderedHTML;
+    if (response.ok) {
+      const renderedHTML = await response.text();
 
-    handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+      currentDirDiv.innerHTML = renderedHTML;
 
-    alertDiv.style.display = "block";
-    alertDiv.textContent = "Successfully created item";
-    setTimeout(() => {
-      alertDiv.style.display = "none";
-    }, 1000);
+      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+
+      alertDiv.style.display = "block";
+      alertDiv.textContent = "Successfully created item";
+      setTimeout(() => {
+        alertDiv.style.display = "none";
+      }, 1500);
+    }
   } catch (err) {
     console.log(err);
   }
@@ -161,17 +170,19 @@ const createItem = async (itemName) => {
 
 const removeItem = async (itemName) => {
   try {
-    const data = await fetch(`/removeItem=${itemName}`);
-    const renderedHTML = await data.text();
+    const response = await fetch(`/removeItem=${itemName}`);
 
-    currentDirDiv.innerHTML = renderedHTML;
-    handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+    if (response.ok) {
+      const renderedHTML = await response.text();
+      currentDirDiv.innerHTML = renderedHTML;
+      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
 
-    alertDiv.style.display = "block";
-    alertDiv.textContent = "Successfully removed item";
-    setTimeout(() => {
-      alertDiv.style.display = "none";
-    }, 1000);
+      alertDiv.style.display = "block";
+      alertDiv.textContent = "Successfully removed item";
+      setTimeout(() => {
+        alertDiv.style.display = "none";
+      }, 1500);
+    }
   } catch (err) {
     console.log(err);
   }

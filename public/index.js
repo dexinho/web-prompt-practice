@@ -12,6 +12,8 @@ const deleteConfirmationDialog = document.querySelector(
   "#delete-confirmation-dialog"
 );
 
+const alertDiv = document.querySelector("#alert-div");
+
 let isDeletable = false;
 
 dirPathInput.addEventListener("keypress", async (e) => {
@@ -130,6 +132,7 @@ creationBtns.forEach((button) => {
   button.addEventListener("click", () => {
     if (button.textContent === "CONFIRM") createItem(itemNameInput.value);
     creationDialog.close();
+    itemNameInput.value = "";
   });
 });
 
@@ -138,20 +141,40 @@ createBtn.addEventListener("click", () => {
 });
 
 const createItem = async (itemName) => {
-  const data = await fetch(`/createItem=${itemName}`);
-  const renderedHTML = await data.text();
+  try {
+    const data = await fetch(`/createItem=${itemName}`);
+    const renderedHTML = await data.text();
 
-  currentDirDiv.innerHTML = renderedHTML;
+    currentDirDiv.innerHTML = renderedHTML;
 
-  handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+    handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+
+    alertDiv.style.display = "block";
+    alertDiv.textContent = "Successfully created item";
+    setTimeout(() => {
+      alertDiv.style.display = "none";
+    }, 1000);
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const removeItem = async (itemName) => {
-  const data = await fetch(`/removeItem=${itemName}`);
-  const renderedHTML = await data.text();
+  try {
+    const data = await fetch(`/removeItem=${itemName}`);
+    const renderedHTML = await data.text();
 
-  currentDirDiv.innerHTML = renderedHTML;
-  handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+    currentDirDiv.innerHTML = renderedHTML;
+    handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+
+    alertDiv.style.display = "block";
+    alertDiv.textContent = "Successfully removed item";
+    setTimeout(() => {
+      alertDiv.style.display = "none";
+    }, 1000);
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const handleItemsBtnsAndIcons = (items, btns) => {

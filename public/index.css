@@ -54,10 +54,11 @@ button {
   flex-wrap: wrap;
   gap: 0.5rem;
   max-height: 500px;
-  overflow: auto;
   background-color: var(--dir-container-bgc);
   width: 500px;
   border-radius: 1rem;
+  overflow-y: scroll;
+  padding: 1rem;
 }
 
 #current-dir>* {
@@ -69,13 +70,17 @@ button {
 
 .items {
   overflow: hidden;
+  transition: padding 0.2s ease-in;
 }
 
 .items:hover {
   outline: 2px solid black;
-  scale: 0.95;
   cursor: pointer;
-  background-color: aquamarine;
+  background-color: rgb(78, 114, 102);
+  color: white;
+  display: flex;
+  align-items: center;
+  padding-left: 1rem;
 }
 
 #dir-name-input {
@@ -130,6 +135,7 @@ img {
   grid-template-columns: 1fr 1fr;
   column-gap: 1rem;
   row-gap: 3rem;
+  width: 450px;
 }
 
 #creation-div>* {
@@ -137,6 +143,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
 #item-name-input {
@@ -152,4 +159,16 @@ img {
 
 #dir-file-name-div {
   font-size: 1.3rem;
+}
+
+#alert-div {
+  position: absolute;
+  display: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2rem;
+  font-size: 1.2rem;
+  background-color: transparent;
+  color: blueviolet;
 }

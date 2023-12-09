@@ -5,45 +5,70 @@ const http = require("http");
 
 const port = 3000;
 const hostname = "127.0.0.1";
-let currentPath;
-let isReadingFile = false;
+const NAVIGATION_STATE = {
+  currentDirPath: "",
+  currentFilePath: "",
+  isReadingFile: false,
+};
 
 const server = http.createServer(async (req, res) => {
   try {
     if (req.method === "GET" && req.url.startsWith("/navForward")) {
-      const url = req.url.split("=")[1].replace(/%20/g, " ");
-      currentPath = url === "C:/" ? "C:\\" : path.join(currentPath, url);
+      try {
+        const url = req.url.split("=")[1].replace(/%20/g, " ");
+        NAVIGATION_STATE.currentDirPath =
+          url === "C:/"
+            ? "C:\\"
+            : path.join(NAVIGATION_STATE.currentDirPath, url);
 
-      const filesAndDirs = await getFilesAndDirs(currentPath);
-      const renderedHTML = renderDirHTML(filesAndDirs);
+        const filesAndDirs = await getFilesAndDirs(
+          NAVIGATION_STATE.currentDirPath
+        );
+        const renderedHTML = renderDirHTML(filesAndDirs);
 
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(renderedHTML);
-    } else if (req.method === "GET" && req.url === "/navBackward") {
-      if (currentPath === "C:\\") return;
-
-      if (!isReadingFile) {
-        currentPath = currentPath.replace(/(\\[^\\]+)$/, "");
-        currentPath = currentPath.replace(/(\/[^\/]+)$/, "");
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(renderedHTML);
+      } catch (err) {
+        console.log("Error with /navForward", err);
+        NAVIGATION_STATE.currentDirPath =
+          NAVIGATION_STATE.currentDirPath.replace(/\//, "");
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Internal Server Error");
       }
+    } else if (req.method === "GET" && req.url === "/navBackward") {
+      try {
+        if (NAVIGATION_STATE.currentDirPath === "C:\\") return;
 
-      isReadingFile = false;
-      if (currentPath === "C:") currentPath = "C:\\";
+        if (!NAVIGATION_STATE.isReadingFile) pathUpOneLevel();
 
-      const filesAndDirs = await getFilesAndDirs(currentPath);
-      const renderedHTML = renderDirHTML(filesAndDirs);
+        NAVIGATION_STATE.isReadingFile = false;
+        if (NAVIGATION_STATE.currentDirPath === "C:")
+          NAVIGATION_STATE.currentDirPath = "C:\\";
 
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(renderedHTML);
+        const filesAndDirs = await getFilesAndDirs(
+          NAVIGATION_STATE.currentDirPath
+        );
+        const renderedHTML = renderDirHTML(filesAndDirs);
+
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(renderedHTML);
+      } catch (err) {
+        console.error("Error with /navBackward:", err);
+
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Internal Server Error");
+      }
     } else if (req.method === "GET" && req.url === "/getPath") {
       res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(currentPath);
+      res.end(NAVIGATION_STATE.currentDirPath);
     } else if (req.method === "GET" && req.url.startsWith("/enterPath")) {
       const url = req.url.split("=")[1];
-      currentPath = url;
+      NAVIGATION_STATE.currentDirPath = url;
 
       if (await isValidPath(url)) {
-        const filesAndDirs = await getFilesAndDirs(currentPath);
+        const filesAndDirs = await getFilesAndDirs(
+          NAVIGATION_STATE.currentDirPath
+        );
         const renderedHTML = renderDirHTML(filesAndDirs);
 
         res.writeHead(200, { "Content-Type": "text/html" });
@@ -54,13 +79,24 @@ const server = http.createServer(async (req, res) => {
         return;
       }
     } else if (req.method === "GET" && req.url.startsWith("/removeItem")) {
-      const itemToRemove = req.url.split("=")[1];
-      await fsp.unlink(path.join(currentPath, itemToRemove));
-      const filesAndDirs = await getFilesAndDirs(currentPath);
-      const renderedHTML = renderDirHTML(filesAndDirs);
+      try {
+        const itemToRemove = req.url.split("=")[1];
+        await fsp.unlink(
+          path.join(NAVIGATION_STATE.currentDirPath, itemToRemove)
+        );
+        const filesAndDirs = await getFilesAndDirs(
+          NAVIGATION_STATE.currentDirPath
+        );
+        const renderedHTML = renderDirHTML(filesAndDirs);
 
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(renderedHTML);
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(renderedHTML);
+      } catch (err) {
+        console.error("Error with /removeItem", err);
+
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Internal Server Error");
+      }
     } else if (req.method === "GET" && req.url.startsWith("/getIcons")) {
       const icon = req.url.split("?")[1];
 
@@ -68,28 +104,71 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { "Content-Type": "image/*" });
       stream.pipe(res);
     } else if (req.method === "GET" && req.url.startsWith("/createItem")) {
-      const itemName = req.url.split("=")[1];
-      await fsp.writeFile(path.join(currentPath, itemName), "");
+      try {
+        const itemName = req.url.split("=")[1];
+        await fsp.writeFile(
+          path.join(NAVIGATION_STATE.currentDirPath, itemName),
+          ""
+        );
 
-      const filesAndDirs = await getFilesAndDirs(currentPath);
-      const renderedHTML = renderDirHTML(filesAndDirs);
+        const filesAndDirs = await getFilesAndDirs(
+          NAVIGATION_STATE.currentDirPath
+        );
+        const renderedHTML = renderDirHTML(filesAndDirs);
 
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(renderedHTML);
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(renderedHTML);
+      } catch (err) {
+        console.error("Error with /createItem:", err);
+
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Internal Server Error");
+      }
     } else if (req.method === "GET" && req.url.startsWith("/readFile")) {
       const fileName = req.url.split("=")[1];
+      NAVIGATION_STATE.currentFilePath = path.join(
+        NAVIGATION_STATE.currentDirPath,
+        fileName
+      );
 
       const readFile = await fsp.readFile(
-        path.join(currentPath, fileName),
+        NAVIGATION_STATE.currentFilePath,
         "utf-8"
       );
 
-      isReadingFile = true;
+      NAVIGATION_STATE.isReadingFile = true;
 
       const renderedHTML = renderFileHTML(readFile);
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end(renderedHTML);
       return;
+    } else if (req.method === "GET" && req.url.startsWith("/saveFile")) {
+      try {
+        const data = req.url.split(/\/saveFile\=/)[1];
+
+        const decodedData = decodeURIComponent(data);
+
+        const parsedData = JSON.parse(decodedData);
+        let finalData = "";
+
+        parsedData.forEach((el) => {
+          finalData += el + "\n";
+        });
+
+        await fsp.writeFile(
+          NAVIGATION_STATE.currentFilePath,
+          finalData,
+          "utf-8"
+        );
+
+        res.writeHead(200);
+        res.end();
+      } catch (err) {
+        console.error("Error parsing JSON:", err);
+        res.writeHead(400, { "Content-Type": "text/plain" });
+        res.end("Invalid JSON data");
+        return;
+      }
     } else {
       const urlPath =
         req.url === "/" ? "./public/index.html" : `./public/${req.url}`;
@@ -132,6 +211,17 @@ async function getFilesAndDirs(path) {
   }));
 }
 
+const pathUpOneLevel = () => {
+  NAVIGATION_STATE.currentDirPath = NAVIGATION_STATE.currentDirPath.replace(
+    /(\\[^\\]+)$/,
+    ""
+  );
+  NAVIGATION_STATE.currentDirPath = NAVIGATION_STATE.currentDirPath.replace(
+    /(\/[^\/]+)$/,
+    ""
+  );
+};
+
 function renderDirHTML(list) {
   return `
   ${list
@@ -150,9 +240,7 @@ function renderDirHTML(list) {
 
 function renderFileHTML(file) {
   return `
-  <div id='current-dir'>
-    <div>${file}</div>
-  </div>
+    <textarea class='file-textarea' cols='50' rows='18'>${file}</textarea>
   `;
 }
 

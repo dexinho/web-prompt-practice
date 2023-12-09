@@ -12,9 +12,27 @@ const deleteConfirmationDialog = document.querySelector(
   "#delete-confirmation-dialog"
 );
 
+const fileTextarea = document.getElementsByClassName("file-textarea");
+
+const saveTextDiv = document.querySelector("#save-text-div");
+const saveTextBtn = document.querySelector("#save-text-btn");
+
 const alertDiv = document.querySelector("#alert-div");
 
 let isDeletable = false;
+
+saveTextBtn.addEventListener("click", async () => {
+  const data = JSON.stringify([...fileTextarea][0].value.split("\n"));
+  const encodedData = encodeURIComponent(data);
+
+  const response = await fetch(`/saveFile=${encodedData}`);
+  if (response.ok) {
+    showAlert("Successfully saved!");
+  } else {
+    const errorMsg = response.text();
+    showAlert(`Unable to save: ${errorMsg}`);
+  }
+});
 
 dirPathInput.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
@@ -33,6 +51,7 @@ dirPathInput.addEventListener("keypress", async (e) => {
 
 backwardBtn.addEventListener("click", () => {
   navigateThroughDirs({ isForward: false });
+  saveTextDiv.style.display = "none";
 });
 
 const updatePath = (path) => {
@@ -44,14 +63,20 @@ const navigateThroughDirs = async ({ dirName, isForward }) => {
     const url = isForward ? `/navForward=${dirName}` : "/navBackward";
 
     const response = await fetch(url);
-    const renderedHTML = await response.text();
-    const getPath = await fetch("/getPath");
-    const jsonPath = await getPath.text();
 
-    currentDirDiv.innerHTML = renderedHTML;
+    if (response.ok) {
+      const renderedHTML = await response.text();
+      const getPath = await fetch("/getPath");
+      const jsonPath = await getPath.text();
 
-    handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
-    updatePath(jsonPath);
+      currentDirDiv.innerHTML = renderedHTML;
+
+      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+      updatePath(jsonPath);
+    } else {
+      const errorMsg = response.text();
+      showAlert(`Unable to open dir: ${errorMsg}`);
+    }
   } catch (err) {
     console.log(err);
   }
@@ -89,10 +114,22 @@ const makeItemsClickable = (items) => {
 
 const openFile = async (fileName) => {
   const response = await fetch(`/readFile=${fileName}`);
-  const renderedHTML = await response.text();
 
-  currentDirDiv.innerHTML = renderedHTML;
-  handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+  try {
+    if (response.ok) {
+      const renderedHTML = await response.text();
+
+      saveTextDiv.style.display = "flex";
+      currentDirDiv.innerHTML = renderedHTML;
+
+      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+    } else {
+      const errorMsg = response.text();
+      showAlert(showAlert(`Unable to open file: ${errorMsg}`));
+    }
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const makeRmItemClickable = (items) => {
@@ -118,16 +155,18 @@ const makeRmItemClickable = (items) => {
             once: true,
           });
         });
-      } else {
-        alertDiv.style.display = "block";
-        alertDiv.textContent = "No permission to remove!";
-        setTimeout(() => {
-          alertDiv.style.display = "none";
-        }, 1000);
-      }
+      } else showAlert("No permission to remove!");
     });
   });
 };
+
+function showAlert(text) {
+  alertDiv.style.display = "block";
+  alertDiv.textContent = text;
+  setTimeout(() => {
+    alertDiv.style.display = "none";
+  }, 1000);
+}
 
 const creationDialog = document.querySelector("#creation-dialog");
 const itemNameInput = document.querySelector("#item-name-input");
@@ -144,6 +183,7 @@ creationBtns.forEach((button) => {
 
 createBtn.addEventListener("click", () => {
   creationDialog.show();
+  saveTextDiv.style.display = "none";
 });
 
 const createItem = async (itemName) => {
@@ -157,11 +197,10 @@ const createItem = async (itemName) => {
 
       handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
 
-      alertDiv.style.display = "block";
-      alertDiv.textContent = "Successfully created item";
-      setTimeout(() => {
-        alertDiv.style.display = "none";
-      }, 1500);
+      showAlert("Successfully created item!");
+    } else {
+      const errorMsg = response.text();
+      showAlert(`Unable to create item: ${errorMsg}`);
     }
   } catch (err) {
     console.log(err);
@@ -177,11 +216,10 @@ const removeItem = async (itemName) => {
       currentDirDiv.innerHTML = renderedHTML;
       handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
 
-      alertDiv.style.display = "block";
-      alertDiv.textContent = "Successfully removed item";
-      setTimeout(() => {
-        alertDiv.style.display = "none";
-      }, 1500);
+      showAlert("Successfully removed item!");
+    } else {
+      const errorMsg = response.text();
+      showAlert(`Unable to remove item: ${errorMsg}`);
     }
   } catch (err) {
     console.log(err);

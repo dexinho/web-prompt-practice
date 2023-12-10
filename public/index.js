@@ -37,12 +37,14 @@ saveTextBtn.addEventListener("click", async () => {
 dirPathInput.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
     try {
-      const response = await fetch(`/enterPath=${dirPathInput.value}`);
+      const response = await fetch(
+        `/enterPath=${encodeURI(dirPathInput.value)}`
+      );
       const renderedHTML = await response.text();
 
       currentDirDiv.innerHTML = renderedHTML;
 
-      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+      handleRenderedHTML([...renderedItems], [...deleteItemBtn]);
     } catch (err) {
       console.log(err);
     }
@@ -71,7 +73,7 @@ const navigateThroughDirs = async ({ dirName, isForward }) => {
 
       currentDirDiv.innerHTML = renderedHTML;
 
-      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+      handleRenderedHTML([...renderedItems], [...deleteItemBtn]);
       updatePath(jsonPath);
     } else {
       const errorMsg = response.text();
@@ -122,7 +124,7 @@ const openFile = async (fileName) => {
       saveTextDiv.style.display = "flex";
       currentDirDiv.innerHTML = renderedHTML;
 
-      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+      handleRenderedHTML([...renderedItems], [...deleteItemBtn]);
     } else {
       const errorMsg = response.text();
       showAlert(showAlert(`Unable to open file: ${errorMsg}`));
@@ -188,14 +190,14 @@ createBtn.addEventListener("click", () => {
 
 const createItem = async (itemName) => {
   try {
-    const response = await fetch(`/createItem=${itemName}`);
+    const response = await fetch(`/createItem=${encodeURI(itemName)}`);
 
     if (response.ok) {
       const renderedHTML = await response.text();
 
       currentDirDiv.innerHTML = renderedHTML;
 
-      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+      handleRenderedHTML([...renderedItems], [...deleteItemBtn]);
 
       showAlert("Successfully created item!");
     } else {
@@ -214,7 +216,7 @@ const removeItem = async (itemName) => {
     if (response.ok) {
       const renderedHTML = await response.text();
       currentDirDiv.innerHTML = renderedHTML;
-      handleItemsBtnsAndIcons([...renderedItems], [...deleteItemBtn]);
+      handleRenderedHTML([...renderedItems], [...deleteItemBtn]);
 
       showAlert("Successfully removed item!");
     } else {
@@ -226,9 +228,19 @@ const removeItem = async (itemName) => {
   }
 };
 
-const handleItemsBtnsAndIcons = (items, btns) => {
+const makeScrollBarOnTop = () => {
+  if ([...fileTextarea][0]) {
+    console.log([...fileTextarea][0].scrollTop);
+    [...fileTextarea][0].scrollTop = 0;
+  }
+
+  currentDirDiv.scrollTop = 0;
+};
+
+const handleRenderedHTML = (items, btns) => {
   makeItemsClickable(items);
   makeRmItemClickable(btns);
+  makeScrollBarOnTop();
   loadIcons();
 };
 

@@ -1,7 +1,7 @@
 const fsp = require("fs").promises;
-const fs = require("fs");
 const path = require("path");
 const http = require("http");
+const he = require("he");
 
 const port = 3000;
 const hostname = "127.0.0.1";
@@ -63,9 +63,9 @@ const server = http.createServer(async (req, res) => {
       res.end(NAVIGATION_STATE.currentDirPath);
     } else if (req.method === "GET" && req.url.startsWith("/enterPath")) {
       const url = req.url.split("=")[1];
-      NAVIGATION_STATE.currentDirPath = url;
+      NAVIGATION_STATE.currentDirPath = decodeURI(url);
 
-      if (await isValidPath(url)) {
+      if (await isValidPath(NAVIGATION_STATE.currentDirPath)) {
         const filesAndDirs = await getFilesAndDirs(
           NAVIGATION_STATE.currentDirPath
         );
@@ -99,17 +99,24 @@ const server = http.createServer(async (req, res) => {
       }
     } else if (req.method === "GET" && req.url.startsWith("/getIcons")) {
       const icon = req.url.split("?")[1];
+      const data = await fsp.readFile(`./assets/icons/${icon}`);
 
-      const stream = fs.createReadStream(`./assets/icons/${icon}`);
       res.writeHead(200, { "Content-Type": "image/*" });
-      stream.pipe(res);
+      res.end(data);
     } else if (req.method === "GET" && req.url.startsWith("/createItem")) {
       try {
-        const itemName = req.url.split("=")[1];
-        await fsp.writeFile(
-          path.join(NAVIGATION_STATE.currentDirPath, itemName),
-          ""
-        );
+        const itemName = decodeURI(req.url.split("=")[1]);
+        const extname = String(path.extname(itemName)).toLowerCase();
+        if (extname)
+          await fsp.writeFile(
+            path.join(NAVIGATION_STATE.currentDirPath, itemName),
+            ""
+          );
+        else
+          await fsp.mkdir(
+            path.join(NAVIGATION_STATE.currentDirPath, itemName),
+            { recursive: true }
+          );
 
         const filesAndDirs = await getFilesAndDirs(
           NAVIGATION_STATE.currentDirPath
@@ -194,22 +201,22 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-async function isValidPath(path) {
+const isValidPath = async (path) => {
   try {
     await fsp.access(path);
     return true;
   } catch (err) {
     return false;
   }
-}
+};
 
-async function getFilesAndDirs(path) {
+const getFilesAndDirs = async (path) => {
   const items = await fsp.readdir(path, { withFileTypes: true });
   return items.map((item) => ({
     name: item.name,
     isDirectory: item.isDirectory(),
   }));
-}
+};
 
 const pathUpOneLevel = () => {
   NAVIGATION_STATE.currentDirPath = NAVIGATION_STATE.currentDirPath.replace(
@@ -222,7 +229,7 @@ const pathUpOneLevel = () => {
   );
 };
 
-function renderDirHTML(list) {
+const renderDirHTML = (list) => {
   return `
   ${list
     .map(
@@ -236,13 +243,12 @@ function renderDirHTML(list) {
     )
     .join("")}
   `;
-}
+};
 
-function renderFileHTML(file) {
-  return `
-    <textarea class='file-textarea' cols='50' rows='18'>${file}</textarea>
-  `;
-}
+const renderFileHTML = (file) => {
+  const escapedFile = he.escape(file);
+  return `<textarea class='file-textarea' cols='50' rows='18'>${escapedFile}</textarea>`;
+};
 
 server.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);

@@ -85,7 +85,7 @@ button {
   padding-left: 1rem;
 }
 
-#dir-name-input {
+#search-bar {
   font-size: 1.2rem;
   padding: 0.35rem;
 }
@@ -178,7 +178,7 @@ img {
   padding: 2rem;
   font-size: 1.2rem;
   background-color: transparent;
-  color: blueviolet;
+  color: rgb(231, 71, 151);
 }
 
 #save-text-div {

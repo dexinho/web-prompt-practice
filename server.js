@@ -21,15 +21,19 @@ const server = http.createServer(async (req, res) => {
             ? "C:\\"
             : path.join(NAVIGATION_STATE.currentDirPath, url);
 
-        const filesAndDirs = await getFilesAndDirs(
-          NAVIGATION_STATE.currentDirPath
-        );
-        const renderedHTML = renderDirHTML(filesAndDirs);
+        if (await isValidPath(NAVIGATION_STATE.currentDirPath)) {
+          const filesAndDirs = await getFilesAndDirs(
+            NAVIGATION_STATE.currentDirPath
+          );
+          const renderedHTML = renderDirHTML(filesAndDirs);
 
-        res.writeHead(200, { "Content-Type": "text/html" });
-        res.end(renderedHTML);
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(renderedHTML);
+        } else {
+          throw new Error("Operation not permitted");
+        }
       } catch (err) {
-        console.log("Error with /navForward", err);
+        goUpOneLevel();
         NAVIGATION_STATE.currentDirPath =
           NAVIGATION_STATE.currentDirPath.replace(/\//, "");
         res.writeHead(500, { "Content-Type": "text/plain" });
@@ -39,7 +43,7 @@ const server = http.createServer(async (req, res) => {
       try {
         if (NAVIGATION_STATE.currentDirPath === "C:\\") return;
 
-        if (!NAVIGATION_STATE.isReadingFile) pathUpOneLevel();
+        if (!NAVIGATION_STATE.isReadingFile) goUpOneLevel();
 
         NAVIGATION_STATE.isReadingFile = false;
         if (NAVIGATION_STATE.currentDirPath === "C:")
@@ -132,23 +136,31 @@ const server = http.createServer(async (req, res) => {
         res.end("Internal Server Error");
       }
     } else if (req.method === "GET" && req.url.startsWith("/readFile")) {
-      const fileName = req.url.split("=")[1];
-      NAVIGATION_STATE.currentFilePath = path.join(
-        NAVIGATION_STATE.currentDirPath,
-        fileName
-      );
+      try {
+        const fileName = req.url.split("=")[1];
+        NAVIGATION_STATE.currentFilePath = path.join(
+          NAVIGATION_STATE.currentDirPath,
+          fileName
+        );
 
-      const readFile = await fsp.readFile(
-        NAVIGATION_STATE.currentFilePath,
-        "utf-8"
-      );
+        if (await isValidPath(NAVIGATION_STATE.currentFilePath)) {
+          const readFile = await fsp.readFile(
+            NAVIGATION_STATE.currentFilePath,
+            "utf-8"
+          );
 
-      NAVIGATION_STATE.isReadingFile = true;
+          NAVIGATION_STATE.isReadingFile = true;
 
-      const renderedHTML = renderFileHTML(readFile);
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(renderedHTML);
-      return;
+          const renderedHTML = renderFileHTML(readFile);
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(renderedHTML);
+        } else throw new Error("Unable to open file");
+      } catch (err) {
+        console.error("Error with /readFile:", err);
+
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Internal Server Error");
+      }
     } else if (req.method === "GET" && req.url.startsWith("/saveFile")) {
       try {
         const data = req.url.split(/\/saveFile\=/)[1];
@@ -218,7 +230,7 @@ const getFilesAndDirs = async (path) => {
   }));
 };
 
-const pathUpOneLevel = () => {
+const goUpOneLevel = () => {
   NAVIGATION_STATE.currentDirPath = NAVIGATION_STATE.currentDirPath.replace(
     /(\\[^\\]+)$/,
     ""

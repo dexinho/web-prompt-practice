@@ -229,9 +229,11 @@ const removeItem = async (itemName) => {
 };
 
 const makeScrollBarOnTop = () => {
-  if ([...fileTextarea][0]) {
-    console.log([...fileTextarea][0].scrollTop);
-    [...fileTextarea][0].scrollTop = 0;
+  const textArea = [...fileTextarea][0];
+  
+  if (textArea) {
+    console.log(textArea.scrollTop);
+    textArea.scrollTop = 0;
   }
 
   currentDirDiv.scrollTop = 0;

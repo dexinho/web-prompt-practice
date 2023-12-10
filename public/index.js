@@ -2,7 +2,7 @@ const currentDirDiv = document.querySelector("#current-dir");
 const renderedItems = document.getElementsByClassName("items");
 const promptContainer = document.querySelector("#prompt-container");
 const backwardBtn = document.querySelector("#backward-btn");
-const dirPathInput = document.querySelector("#dir-name-input");
+const searchBar = document.querySelector("#search-bar");
 const deleteItemBtn = document.getElementsByClassName("delete-item-btn");
 const deleteConfirmationBtns = document.querySelectorAll(
   ".delete-confirmation-btns"
@@ -34,12 +34,10 @@ saveTextBtn.addEventListener("click", async () => {
   }
 });
 
-dirPathInput.addEventListener("keypress", async (e) => {
+searchBar.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
     try {
-      const response = await fetch(
-        `/enterPath=${encodeURI(dirPathInput.value)}`
-      );
+      const response = await fetch(`/enterPath=${encodeURI(searchBar.value)}`);
       const renderedHTML = await response.text();
 
       currentDirDiv.innerHTML = renderedHTML;
@@ -57,7 +55,7 @@ backwardBtn.addEventListener("click", () => {
 });
 
 const updatePath = (path) => {
-  dirPathInput.value = path;
+  searchBar.value = path;
 };
 
 const navigateThroughDirs = async ({ dirName, isForward }) => {
@@ -76,8 +74,9 @@ const navigateThroughDirs = async ({ dirName, isForward }) => {
       handleRenderedHTML([...renderedItems], [...deleteItemBtn]);
       updatePath(jsonPath);
     } else {
-      const errorMsg = response.text();
-      showAlert(`Unable to open dir: ${errorMsg}`);
+      const responseError = await response.text();
+      console.log("Error with navigation: " + responseError);
+      showAlert(`Operation not permitted!`);
     }
   } catch (err) {
     console.log(err);
@@ -126,8 +125,9 @@ const openFile = async (fileName) => {
 
       handleRenderedHTML([...renderedItems], [...deleteItemBtn]);
     } else {
-      const errorMsg = response.text();
-      showAlert(showAlert(`Unable to open file: ${errorMsg}`));
+      const errorMsg = await response.text();
+      console.log(errorMsg);
+      showAlert(`Operation not permitted!`);
     }
   } catch (err) {
     console.log(err);
@@ -228,21 +228,23 @@ const removeItem = async (itemName) => {
   }
 };
 
-const makeScrollBarOnTop = () => {
+const makeScrollOnTop = () => {
   const textArea = [...fileTextarea][0];
-  
-  if (textArea) {
-    console.log(textArea.scrollTop);
-    textArea.scrollTop = 0;
-  }
+
+  if (textArea) textArea.scrollTop = 0;
 
   currentDirDiv.scrollTop = 0;
+};
+
+const focusInput = (input) => {
+  input.focus();
 };
 
 const handleRenderedHTML = (items, btns) => {
   makeItemsClickable(items);
   makeRmItemClickable(btns);
-  makeScrollBarOnTop();
+  focusInput(searchBar);
+  makeScrollOnTop();
   loadIcons();
 };
 

@@ -103,7 +103,7 @@ const server = http.createServer(async (req, res) => {
       }
     } else if (req.method === "GET" && req.url.startsWith("/getIcons")) {
       const icon = req.url.split("?")[1];
-      const data = await fsp.readFile(`./assets/icons/${icon}`);
+      const data = await fsp.readFile(`./public/assets/icons/${icon}`);
 
       res.writeHead(200, { "Content-Type": "image/*" });
       res.end(data);

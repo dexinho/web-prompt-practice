@@ -15,11 +15,11 @@ const server = http.createServer(async (req, res) => {
   try {
     if (req.method === "GET" && req.url.startsWith("/navForward")) {
       try {
-        const url = req.url.split("=")[1].replace(/%20/g, " ");
+        const path = req.url.split("=")[1].replace(/%20/g, " ");
         NAVIGATION_STATE.currentDirPath =
-          url === "C:/"
+          path === "C:/"
             ? "C:\\"
-            : path.join(NAVIGATION_STATE.currentDirPath, url);
+            : path.join(NAVIGATION_STATE.currentDirPath, path);
 
         if (await isValidPath(NAVIGATION_STATE.currentDirPath)) {
           const filesAndDirs = await getFilesAndDirs(
